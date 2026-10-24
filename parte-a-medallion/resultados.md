@@ -12,7 +12,7 @@ El conjunto de datos utilizado en el proyecto Calcusol proviene de **NASA POWER*
 - **Ubicaciones:** 16.
 - **Registros:** 1.122.048 filas.
 - **Número de columnas:** 9.
-- **Tamaño del archivo CSV:** [completar con el tamaño verificado en Amazon S3].
+- **Tamaño del archivo CSV:** 80.2MB.
 - **Zona horaria:** UTC.
 
 Las variables del conjunto de datos son:
@@ -55,9 +55,21 @@ Los resultados fueron los siguientes:
 | Radiaciones negativas | 0 | No se encontraron valores negativos en las variables de radiación revisadas. |
 | Temperaturas fuera del rango definido | 0 | No se encontraron valores de `T2M` fuera del intervalo de -50 a 60 °C. |
 
-El principal hallazgo fue la presencia de **550.751 valores `-999` en `ALLSKY_KT`**, equivalentes aproximadamente al 49,08 % de las filas. Este valor corresponde a un centinela y no debe interpretarse como un índice de claridad real.
+El principal hallazgo fue la presencia de **550.751 valores `-999` en `ALLSKY_KT`**, equivalentes aproximadamente al 49,08 % de las filas. Este valor se identificó como un **valor centinela**, es decir, un valor especial utilizado para representar información no disponible, y no como una medición real del índice de claridad atmosférica. Por esta razón, interpretarlo como un valor numérico válido habría afectado los cálculos estadísticos, especialmente el promedio de `ALLSKY_KT`.
 
-Por ello, estos valores se normalizaron a `NULL` en Silver, sin rechazar automáticamente las filas completas. Las demás verificaciones realizadas no identificaron registros que incumplieran los criterios de calidad definidos.
+La revisión de los datos mostró que los valores `-999` se presentaban principalmente durante horas con radiación solar igual a cero. Por tanto, se decidió conservar las observaciones y transformar únicamente el valor centinela de `ALLSKY_KT` a `NULL` durante la transformación a Silver.
+
+La decisión se tomó por las siguientes razones:
+
+1. **Evitar distorsiones estadísticas:** si los valores `-999` se trataran como mediciones reales, reducirían artificialmente el promedio del índice de claridad y producirían resultados engañosos.
+2. **Conservar información útil:** no se rechazó la fila completa porque las demás variables, como la fecha, la ubicación, la radiación y la temperatura, podían seguir siendo válidas para otros análisis.
+3. **Representar correctamente la ausencia de información:** `NULL` indica que el valor del índice no está disponible y permite que las funciones de agregación, como `AVG`, excluyan estos valores del cálculo del promedio.
+4. **Mantener la trazabilidad de la transformación:** el dato original se conserva en Bronze, mientras que Silver contiene la versión depurada para el análisis.
+
+En consecuencia, los 550.751 valores centinela no se contabilizaron como filas rechazadas. Se normalizaron a `NULL` en `silver_valid`, por lo que el número de registros válidos se mantuvo en 1.122.048 y el número de registros rechazados fue cero.
+
+Esta decisión permite conservar la mayor cantidad posible de información útil y evita que valores que representan datos no disponibles afecten los indicadores calculados en la capa Gold.
+
 
 ## 4. Capa Silver: reglas de calidad
 
