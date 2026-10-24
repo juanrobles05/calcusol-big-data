@@ -103,6 +103,9 @@ SQS, Lambda y DynamoDB sirven bien para volúmenes bajos y medios; la prueba fue
 - Registrar las mediciones obtenidas durante las pruebas.
 - No incluir credenciales ni información sensible en el repositorio.
 
+## Video del trabajo
+Url: https://youtu.be/KhR9w-bkVtk 
+
 ## Integrantes
 
 - Juan Diego Robles De La Osa
